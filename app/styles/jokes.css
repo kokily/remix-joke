@@ -70,6 +70,10 @@
   border-top: 1px solid var(--color-border);
 }
 
+.answer {
+  color: red;
+}
+
 @media print, (min-width: 640px) {
   .jokes-header .logo {
     display: none;
