@@ -3,9 +3,18 @@ import { PrismaClient } from '@prisma/client';
 const db = new PrismaClient();
 
 async function seed() {
+  const kokily = await db.user.create({
+    data: {
+      username: 'kokily',
+      passwordHash:
+        '$2a$10$xpT1m9uFnqZpukZPeGxVduGOJYc4eZl7FxGHHfBP7rxJ9oNvfjhWa',
+    },
+  });
+
   await Promise.all(
     getJokes().map((joke) => {
-      return db.joke.create({ data: joke });
+      const data = { jokesterId: kokily.id, ...joke };
+      return db.joke.create({ data });
     })
   );
 }

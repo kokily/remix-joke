@@ -1,7 +1,9 @@
-import { ActionFunction, json } from '@remix-run/node';
+import type { ActionFunction } from '@remix-run/node';
+import { json } from '@remix-run/node';
 import { redirect } from '@remix-run/node';
 import { useActionData } from '@remix-run/react';
 import { db } from '~/utils/db.server';
+import { requireUserId } from '~/utils/session.server';
 
 function validateJokeContent(content: string) {
   if (content.length < 10) {
@@ -30,6 +32,7 @@ type ActionData = {
 const badRequest = (data: ActionData) => json(data, { status: 400 });
 
 export const action: ActionFunction = async ({ request }) => {
+  const userId = await requireUserId(request);
   const form = await request.formData();
 
   const name = form.get('name');
@@ -50,7 +53,9 @@ export const action: ActionFunction = async ({ request }) => {
     return badRequest({ fieldErrors, fields });
   }
 
-  const joke = await db.joke.create({ data: fields });
+  const joke = await db.joke.create({
+    data: { ...fields, jokesterId: userId },
+  });
   return redirect(`/jokes/${joke.id}`);
 };
 
@@ -70,7 +75,7 @@ function NewJokeRoute() {
               name="name"
               defaultValue={actionData?.fields?.name}
               aria-invalid={Boolean(actionData?.fieldErrors?.name) || undefined}
-              aria-errorMessage={
+              aria-errormessage={
                 actionData?.fieldErrors?.name ? 'name-error' : undefined
               }
             />
@@ -91,7 +96,7 @@ function NewJokeRoute() {
               aria-invalid={
                 Boolean(actionData?.fieldErrors?.content) || undefined
               }
-              aria-errorMessage={
+              aria-errormessage={
                 actionData?.fieldErrors?.content ? 'content-error' : undefined
               }
             />
