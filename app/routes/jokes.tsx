@@ -1,5 +1,4 @@
 import type { LinksFunction, LoaderFunction } from '@remix-run/node';
-import type { Joke } from '@prisma/client';
 import { json } from '@remix-run/node';
 import { Outlet, Link, useLoaderData } from '@remix-run/react';
 import stylesUrl from '~/styles/jokes.css';
