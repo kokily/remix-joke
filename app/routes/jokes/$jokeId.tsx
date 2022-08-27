@@ -1,13 +1,17 @@
 import type { Joke } from '@prisma/client';
-import { json, LoaderFunction } from '@remix-run/node';
+import type { ActionFunction, LoaderFunction } from '@remix-run/node';
+import { json, redirect } from '@remix-run/node';
 import { db } from '~/utils/db.server';
 import { Link, useCatch, useLoaderData, useParams } from '@remix-run/react';
+import { getUserId, requireUserId } from '~/utils/session.server';
 
 type LoaderData = {
   joke: Joke;
+  isOwner: boolean;
 };
 
-export const loader: LoaderFunction = async ({ params }) => {
+export const loader: LoaderFunction = async ({ request, params }) => {
+  const userId = await getUserId(request);
   const joke = await db.joke.findUnique({
     where: { id: params.jokeId },
   });
@@ -18,9 +22,41 @@ export const loader: LoaderFunction = async ({ params }) => {
     });
   }
 
-  const data: LoaderData = { joke };
+  const data: LoaderData = {
+    joke,
+    isOwner: userId === joke.jokesterId,
+  };
 
   return json(data);
+};
+
+export const action: ActionFunction = async ({ request, params }) => {
+  const form = await request.formData();
+
+  if (form.get('_method') !== 'delete') {
+    throw new Response(`The _method ${form.get('method')} is not supported`, {
+      status: 400,
+    });
+  }
+
+  const userId = await requireUserId(request);
+  const joke = await db.joke.findUnique({
+    where: { id: params.jokeId },
+  });
+
+  if (!joke) {
+    throw new Response("Can't delete what does not exist", {
+      status: 404,
+    });
+  }
+
+  if (joke.jokesterId !== userId) {
+    throw new Response("Pssh, nice try. That's not your joke", { status: 401 });
+  }
+
+  await db.joke.delete({ where: { id: params.jokeId } });
+
+  return redirect('/jokes');
 };
 
 function JokeRoute() {
@@ -34,6 +70,15 @@ function JokeRoute() {
       </p>
 
       <Link to=".">{data.joke.name} Permalink</Link>
+      {data.isOwner && (
+        <form method="post">
+          <input type="hidden" name="_method" value="delete" />
+
+          <button type="submit" className="button">
+            삭제
+          </button>
+        </form>
+      )}
     </div>
   );
 }
@@ -42,15 +87,32 @@ export function CatchBoundary() {
   const caught = useCatch();
   const params = useParams();
 
-  if (caught.status === 404) {
-    return (
-      <div className="error-container">
-        Huh? What the heck is "{params.jokeId}"?
-      </div>
-    );
+  switch (caught.status) {
+    case 400: {
+      return (
+        <div className="error-container">
+          What you're trying to do is not allowed.
+        </div>
+      );
+    }
+    case 404: {
+      return (
+        <div className="error-container">
+          Huh? What the heck is {params.jokeId}
+        </div>
+      );
+    }
+    case 401: {
+      return (
+        <div className="error-container">
+          Sorry, but {params.jokeId} is not your joke.
+        </div>
+      );
+    }
+    default: {
+      throw new Error(`Unhandled error: ${caught.status}`);
+    }
   }
-
-  throw new Error(`Unhandled error: ${caught.status}`);
 }
 
 export function ErrorBoundary() {
