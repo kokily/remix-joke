@@ -1,7 +1,7 @@
 import type { ActionFunction, LoaderFunction } from '@remix-run/node';
 import { json } from '@remix-run/node';
 import { redirect } from '@remix-run/node';
-import { Link, useActionData, useCatch } from '@remix-run/react';
+import { Form, Link, useActionData, useCatch } from '@remix-run/react';
 import { db } from '~/utils/db.server';
 import { getUserId, requireUserId } from '~/utils/session.server';
 
@@ -76,7 +76,7 @@ function NewJokeRoute() {
     <div>
       <p>당신만의 재밌는 농담을 추가해보세요!</p>
 
-      <form method="post">
+      <Form method="post">
         <div>
           <label>
             이름:
@@ -128,7 +128,7 @@ function NewJokeRoute() {
             추가
           </button>
         </div>
-      </form>
+      </Form>
     </div>
   );
 }

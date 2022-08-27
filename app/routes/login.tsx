@@ -4,7 +4,7 @@ import {
   LinksFunction,
   MetaFunction,
 } from '@remix-run/node';
-import { Link, useActionData, useSearchParams } from '@remix-run/react';
+import { Form, Link, useActionData, useSearchParams } from '@remix-run/react';
 import { db } from '~/utils/db.server';
 import { createUserSession, login, register } from '~/utils/session.server';
 import stylesUrl from '../styles/login.css';
@@ -145,7 +145,7 @@ function Login() {
     <div className="container">
       <div className="content" data-light="">
         <h1>로그인</h1>
-        <form method="post">
+        <Form method="post">
           <input
             type="hidden"
             name="redirectTo"
@@ -229,7 +229,7 @@ function Login() {
           <button type="submit" className="button">
             전송
           </button>
-        </form>
+        </Form>
       </div>
 
       <div className="links">
